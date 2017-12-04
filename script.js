@@ -3,11 +3,14 @@
 var source;
 var canvas;
 var player;
+var sample;
 var context;
+var processor;
 var frame = 0;
-var size = 1;
+var textSize = 1;
 var text = "DROP STEREO AUDIO HERE!";
-var nags = ["STEREO AUDIO PLEASE!", "I SAID STEREO!", "PLEASE, STEREO!", "STEREO ONLY!", "NOT MONO! STEREO!"];
+var formatNags = ["AUDIO FILES PLEASE!", "I SAID AUDIO!", "PLEASE, AUDIO!", "AUDIO ONLY!"];
+var stereoNags = ["STEREO AUDIO PLEASE!", "I SAID STEREO!", "PLEASE, STEREO!", "STEREO ONLY!", "NOT MONO! STEREO!"];
 var requestFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function(e) { return window.setTimeout(e, 1000 / 60); };
 var cancelFrame = window.cancelAnimationFrame || window.webkitCancelAnimationFrame || window.mozCancelAnimationFrame || window.oCancelAnimationFrame || window.msCancelAnimationFrame || function(id) { window.clearTimeout(id); };
 
@@ -15,6 +18,16 @@ function setup() {
 	canvas = document.getElementById("canvas");
 	context = canvas.getContext("2d", { alpha: false });
 	player = new (window.AudioContext || window.webkitAudioContext)();
+	processor = player.createScriptProcessor(1024, 2, 1);
+	processor.onaudioprocess = function(e) {
+		var left = e.inputBuffer.getChannelData(0);
+		var right = e.inputBuffer.getChannelData(1);
+		var output = e.outputBuffer.getChannelData(0);
+		for (var i = 0; i < left.length; i++) {
+			output[i] = left[i] - right[i];
+		}
+		sample = output;
+	};
 	window.addEventListener("resize", resize);
 	window.addEventListener("orientationchange", resize);
 	resize();
@@ -39,52 +52,51 @@ function drop(e) {
 	e.preventDefault();
 	if (e.dataTransfer && e.dataTransfer.files) {
 		var file = e.dataTransfer.files[0];
-		var reader = new FileReader();
-		reader.onload = function() {
-			text = "THANKS!";
-			player.decodeAudioData(this.result, function(buffer) {
-				play(buffer);
-			});
-		};
-		reader.readAsArrayBuffer(file);
+		if (file.type.match("audio.*")) {
+			var reader = new FileReader();
+			reader.onload = function() {
+				text = "THANKS!";
+				player.decodeAudioData(this.result, function(buffer) {
+					play(buffer);
+				});
+			};
+			reader.readAsArrayBuffer(file);
+		} else {
+			text = formatNags[Math.floor(Math.random() * formatNags.length)];
+			textSize = 1;
+		}
 	}
 }
 
 function play(buffer) {
 	if (buffer.numberOfChannels === 2) {
-		var audio = [];
-		var left = buffer.getChannelData(0);
-		var right = buffer.getChannelData(1);
-		for (var i = 0; i < left.length; i++) {
-			audio.push(left[i] - right[i]);
-		}
-		var mono = player.createBuffer(1, buffer.length, buffer.sampleRate);
-		mono.getChannelData(0).set(audio);
 		if (source) {
+			source.disconnect();
 			source.stop();
 		}
 		source = player.createBufferSource();
-		source.buffer = mono;
-		source.connect(player.destination);
+		source.buffer = buffer;
+		source.connect(processor);
+		processor.connect(player.destination);
 		source.start();
 	} else {
-		text = nags[Math.floor(Math.random() * nags.length)];
-		size = 1;
+		text = stereoNags[Math.floor(Math.random() * stereoNags.length)];
+		textSize = 1;
 	}
 }
 
 function draw() {
 	context.fillStyle = "black";
 	context.fillRect(0, 0, canvas.width, canvas.height);
-	if (source && source.buffer) {
-		waveform(source.buffer.getChannelData(0));
+	if (sample) {
+		waveform(sample);
 	} else {
 		context.fillStyle = "white";
 		context.textAlign = "center";
-		context.font = canvas.width * size + "px Arial";
+		context.font = canvas.width * textSize + "px Arial";
 		context.fillText(text, canvas.width * 0.5, canvas.height * 0.5);
-		if (size > 0.05) {
-			size -= 0.05;
+		if (textSize > 0.05) {
+			textSize -= 0.05;
 		}
 	}
 	frame = requestFrame(draw);
@@ -102,7 +114,7 @@ function waveform(audio) {
 	for (var i = 0; i < lines; i++) {
 		var key = Math.floor(block * i);
 		var x = i * gap;
-		var y = 4 + audio[key] * canvas.height * 0.5;
+		var y = 4 + audio[key] * canvas.height;
 		context.moveTo(x, y);
 		context.lineTo(x, -y);
 	}
