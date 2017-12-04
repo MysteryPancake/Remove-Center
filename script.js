@@ -108,13 +108,10 @@ function waveform(audio) {
 	context.lineWidth = 2;
 	context.strokeStyle = "white";
 	context.translate(0, canvas.height * 0.5);
-	var block = Math.floor(audio.length / lines);
-	var gap = canvas.width / lines;
 	context.beginPath();
 	for (var i = 0; i < lines; i++) {
-		var key = Math.floor(block * i);
-		var x = i * gap;
-		var y = 4 + audio[key] * canvas.height;
+		var x = i * canvas.width / lines;
+		var y = 4 + audio[i] * canvas.height;
 		context.moveTo(x, y);
 		context.lineTo(x, -y);
 	}
