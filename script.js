@@ -18,7 +18,7 @@ function setup() {
 	canvas = document.getElementById("canvas");
 	context = canvas.getContext("2d", { alpha: false });
 	player = new (window.AudioContext || window.webkitAudioContext)();
-	processor = player.createScriptProcessor(1024, 2, 1);
+	processor = player.createScriptProcessor(2048, 2, 1);
 	processor.onaudioprocess = function(e) {
 		var left = e.inputBuffer.getChannelData(0);
 		var right = e.inputBuffer.getChannelData(1);
