@@ -93,6 +93,7 @@ function draw() {
 	} else {
 		context.fillStyle = "white";
 		context.textAlign = "center";
+		context.textBaseline = "middle";
 		context.font = canvas.width * textSize + "px Arial";
 		context.fillText(text, canvas.width * 0.5, canvas.height * 0.5);
 		if (textSize > 0.05) {
