@@ -54,7 +54,7 @@ function drop(e) {
 	e.preventDefault();
 	if (e.dataTransfer && e.dataTransfer.files) {
 		var file = e.dataTransfer.files[0];
-		if (file.type.match("audio.*")) {
+		if (file.type.indexOf("audio") !== -1) {
 			var reader = new FileReader();
 			reader.onload = function() {
 				text = "THANKS!";
