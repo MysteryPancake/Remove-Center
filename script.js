@@ -115,7 +115,7 @@ function waveform(audio) {
 	context.beginPath();
 	for (var i = 0; i < lines; i++) {
 		var x = i * canvas.width / lines;
-		var y = 2 + audio[Math.floor(i * key)] * canvas.height;
+		var y = 2 + audio[Math.floor(i * key)] * canvas.height * 0.5;
 		context.moveTo(x, y);
 		context.lineTo(x, -y);
 	}
