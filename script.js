@@ -18,15 +18,17 @@ function setup() {
 	canvas = document.getElementById("canvas");
 	context = canvas.getContext("2d", { alpha: false });
 	player = new (window.AudioContext || window.webkitAudioContext)();
-	processor = player.createScriptProcessor(2048, 2, 1);
+	processor = player.createScriptProcessor(2048, 2, 2);
 	processor.onaudioprocess = function(e) {
-		var left = e.inputBuffer.getChannelData(0);
-		var right = e.inputBuffer.getChannelData(1);
-		var output = e.outputBuffer.getChannelData(0);
-		for (var i = 0; i < left.length; i++) {
-			output[i] = left[i] - right[i];
+		var inLeft = e.inputBuffer.getChannelData(0);
+		var inRight = e.inputBuffer.getChannelData(1);
+		var outLeft = e.outputBuffer.getChannelData(0);
+		var outRight = e.outputBuffer.getChannelData(1);
+		for (var i = 0; i < inLeft.length; i++) {
+			outLeft[i] = inLeft[i] - inRight[i];
+			outRight[i] = inRight[i] - inLeft[i];
 		}
-		sample = output;
+		sample = outLeft;
 	};
 	window.addEventListener("resize", resize);
 	window.addEventListener("orientationchange", resize);
