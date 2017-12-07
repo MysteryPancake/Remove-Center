@@ -23,7 +23,7 @@ function setup() {
 		var left = e.inputBuffer.getChannelData(0);
 		var right = e.inputBuffer.getChannelData(1);
 		var output = e.outputBuffer.getChannelData(0);
-		for (var i = 0; i < inLeft.length; i++) {
+		for (var i = 0; i < left.length; i++) {
 			output[i] = left[i] - right[i];
 		}
 		sample = output;
