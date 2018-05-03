@@ -49,7 +49,8 @@ function drop(e) {
 			for (var i = 0; i < left.length; i++) {
 				output[i] = left[i] - right[i];
 			}
-			sample = output;
+			sample = new Float32Array(output.length);
+			sample.set(output);
 		};
 	}
 	if (e.dataTransfer && e.dataTransfer.files) {
