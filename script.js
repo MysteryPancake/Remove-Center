@@ -17,17 +17,6 @@ var cancelFrame = window.cancelAnimationFrame || window.webkitCancelAnimationFra
 function setup() {
 	canvas = document.getElementById("canvas");
 	context = canvas.getContext("2d", { alpha: false });
-	player = new (window.AudioContext || window.webkitAudioContext)();
-	processor = player.createScriptProcessor(2048, 2, 1);
-	processor.onaudioprocess = function(e) {
-		var left = e.inputBuffer.getChannelData(0);
-		var right = e.inputBuffer.getChannelData(1);
-		var output = e.outputBuffer.getChannelData(0);
-		for (var i = 0; i < left.length; i++) {
-			output[i] = left[i] - right[i];
-		}
-		sample = output;
-	};
 	window.addEventListener("resize", resize);
 	window.addEventListener("orientationchange", resize);
 	resize();
@@ -50,6 +39,19 @@ function drag(e) {
 
 function drop(e) {
 	e.preventDefault();
+	if (!player) {
+		player = new (window.AudioContext || window.webkitAudioContext)();
+		processor = player.createScriptProcessor(2048, 2, 1);
+		processor.onaudioprocess = function(e) {
+			var left = e.inputBuffer.getChannelData(0);
+			var right = e.inputBuffer.getChannelData(1);
+			var output = e.outputBuffer.getChannelData(0);
+			for (var i = 0; i < left.length; i++) {
+				output[i] = left[i] - right[i];
+			}
+			sample = output;
+		};
+	}
 	if (e.dataTransfer && e.dataTransfer.files) {
 		var file = e.dataTransfer.files[0];
 		if (file.type.indexOf("audio") !== -1) {
