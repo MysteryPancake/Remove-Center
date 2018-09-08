@@ -127,8 +127,7 @@ function encodeMono(data) {
 	writeString(view, 36, "data");
 	view.setUint32(40, data.length * 2, true);
 	floatToPCM(data.getChannelData(0), view, 44);
-	var blob = new Blob([view], { type: "audio/wav" });
-	return window.URL.createObjectURL(blob);
+	return new Blob([view], { type: "audio/wav" });
 }
 
 function clicked(e) {
@@ -144,7 +143,7 @@ function clicked(e) {
 		process.connect(offline.destination);
 		src.start();
 		offline.oncomplete = function(e) {
-			var url = encodeMono(e.renderedBuffer);
+			var url = window.URL.createObjectURL(encodeMono(e.renderedBuffer));
 			var download = document.getElementById("download");
 			download.href = url;
 			download.download = fileName + ".wav";
