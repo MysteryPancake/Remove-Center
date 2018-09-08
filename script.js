@@ -32,20 +32,15 @@ function setup() {
 	player = new (window.AudioContext || window.webkitAudioContext)();
 	processor = player.createScriptProcessor(2048, 2, 1);
 	processor.onaudioprocess = function(e) {
-		var output = removeCenter(e);
+		var left = e.inputBuffer.getChannelData(0);
+		var right = e.inputBuffer.getChannelData(1);
+		var output = e.outputBuffer.getChannelData(0);
+		for (var i = 0; i < left.length; i++) {
+			output[i] = left[i] - right[i];
+		}
 		sample = new Float32Array(output.length);
 		sample.set(output);
 	};
-}
-
-function removeCenter(e) {
-	var left = e.inputBuffer.getChannelData(0);
-	var right = e.inputBuffer.getChannelData(1);
-	var output = e.outputBuffer.getChannelData(0);
-	for (var i = 0; i < left.length; i++) {
-		output[i] = left[i] - right[i];
-	}
-	return output;
 }
 
 function resize() {
@@ -103,54 +98,42 @@ function writeString(view, offset, str) {
 	}
 }
 
-function floatToPCM(input, output, offset) {
-	for (var i = 0; i < input.length; i++, offset += 2) {
-		var s = Math.max(-1, Math.min(1, input[i]));
+function removeCenter(input, output, offset) {
+	var left = input.getChannelData(0);
+	var right = input.getChannelData(1);
+	for (var i = 0; i < left.length; i++, offset += 2) {
+		var s = Math.max(-1, Math.min(1, left[i] - right[i]));
 		output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
 	}
-}
-
-function encodeMono(data) {
-	var buffer = new ArrayBuffer(44 + data.length * 2);
-	var view = new DataView(buffer);
-	writeString(view, 0, "RIFF");
-	view.setUint32(4, 36 + data.length * 2, true);
-	writeString(view, 8, "WAVE");
-	writeString(view, 12, "fmt ");
-	view.setUint32(16, 16, true);
-	view.setUint16(20, 1, true);
-	view.setUint16(22, 1, true);
-	view.setUint32(24, data.sampleRate, true);
-	view.setUint32(28, data.sampleRate * 2, true);
-	view.setUint16(32, 2, true);
-	view.setUint16(34, 16, true);
-	writeString(view, 36, "data");
-	view.setUint32(40, data.length * 2, true);
-	floatToPCM(data.getChannelData(0), view, 44);
-	return new Blob([view], { type: "audio/wav" });
 }
 
 function clicked(e) {
 	e.preventDefault();
 	if (source) {
-		var buffer = source.buffer;
-		var offline = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(1, buffer.length, buffer.sampleRate);
-		var src = offline.createBufferSource();
-		src.buffer = buffer;
-		var process = offline.createScriptProcessor(2048, 2, 1);
-		process.onaudioprocess = removeCenter;
-		src.connect(process);
-		process.connect(offline.destination);
-		src.start();
-		offline.oncomplete = function(e) {
-			var url = window.URL.createObjectURL(encodeMono(e.renderedBuffer));
-			var download = document.getElementById("download");
-			download.href = url;
-			download.download = fileName + ".wav";
-			download.click();
-			window.URL.revokeObjectURL(url);
-		};
-		offline.startRendering();
+		var data = source.buffer;
+		var buffer = new ArrayBuffer(44 + data.length * 2);
+		var view = new DataView(buffer);
+		writeString(view, 0, "RIFF");
+		view.setUint32(4, 36 + data.length * 2, true);
+		writeString(view, 8, "WAVE");
+		writeString(view, 12, "fmt ");
+		view.setUint32(16, 16, true);
+		view.setUint16(20, 1, true);
+		view.setUint16(22, 1, true);
+		view.setUint32(24, data.sampleRate, true);
+		view.setUint32(28, data.sampleRate * 2, true);
+		view.setUint16(32, 2, true);
+		view.setUint16(34, 16, true);
+		writeString(view, 36, "data");
+		view.setUint32(40, data.length * 2, true);
+		removeCenter(data, view, 44);
+		var blob = new Blob([view], { type: "audio/wav" });
+		var url = window.URL.createObjectURL(blob);
+		var download = document.getElementById("download");
+		download.href = url;
+		download.download = fileName + ".wav";
+		download.click();
+		window.URL.revokeObjectURL(url);
 	} else {
 		document.getElementById("file").click();
 	}
