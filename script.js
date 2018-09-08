@@ -110,24 +110,25 @@ function floatToPCM(input, output, offset) {
 	}
 }
 
-function encode(samples, rate) {
-	var buffer = new ArrayBuffer(44 + samples.length * 2);
+function encodeMono(data) {
+	var buffer = new ArrayBuffer(44 + data.length * 2);
 	var view = new DataView(buffer);
 	writeString(view, 0, "RIFF");
-	view.setUint32(4, 36 + samples.length * 2, true);
+	view.setUint32(4, 36 + data.length * 2, true);
 	writeString(view, 8, "WAVE");
 	writeString(view, 12, "fmt ");
 	view.setUint32(16, 16, true);
 	view.setUint16(20, 1, true);
 	view.setUint16(22, 1, true);
-	view.setUint32(24, rate, true);
-	view.setUint32(28, rate * 2, true);
+	view.setUint32(24, data.sampleRate, true);
+	view.setUint32(28, data.sampleRate * 2, true);
 	view.setUint16(32, 2, true);
 	view.setUint16(34, 16, true);
 	writeString(view, 36, "data");
-	view.setUint32(40, samples.length * 2, true);
-	floatToPCM(samples, view, 44);
-	return view;
+	view.setUint32(40, data.length * 2, true);
+	floatToPCM(data.getChannelData(0), view, 44);
+	var blob = new Blob([view], { type: "audio/wav" });
+	return window.URL.createObjectURL(blob);
 }
 
 function clicked(e) {
@@ -143,9 +144,7 @@ function clicked(e) {
 		process.connect(offline.destination);
 		src.start();
 		offline.oncomplete = function(e) {
-			var wav = encode(e.renderedBuffer.getChannelData(0), buffer.sampleRate);
-			var blob = new Blob([wav], { type: "audio/wav" });
-			var url = window.URL.createObjectURL(blob);
+			var url = encodeMono(e.renderedBuffer);
 			var download = document.getElementById("download");
 			download.href = url;
 			download.download = fileName + ".wav";
