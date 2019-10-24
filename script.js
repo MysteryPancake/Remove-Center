@@ -51,7 +51,7 @@ function resize() {
 }
 
 function decode(file) {
-	if (file.type.indexOf("audio") !== -1) {
+	if (file.type.startsWith("audio") || file.type.startsWith("video")) {
 		var reader = new FileReader();
 		reader.onload = function() {
 			text = "THANKS!";
