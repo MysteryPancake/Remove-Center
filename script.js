@@ -38,8 +38,7 @@ function setup() {
 		for (var i = 0; i < left.length; i++) {
 			output[i] = left[i] - right[i];
 		}
-		sample = new Float32Array(output.length);
-		sample.set(output);
+		sample = output.slice();
 	};
 }
 
